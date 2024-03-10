@@ -1,0 +1,86 @@
+import random
+import math
+import matplotlib.pyplot as plt
+
+def euclidean_distance(point1, point2):
+    """Compute the Euclidean distance between two points."""
+    return math.sqrt(sum((p1 - p2)**2 for p1, p2 in zip(point1, point2)))
+
+def initialize_clusters(data, k):
+    """Randomly initialize k cluster centers."""
+    centers = random.sample(data, k)
+    return centers
+
+def assign_clusters(data, centers):
+    """Assign each data point to the nearest cluster."""
+    clusters = [[] for _ in range(len(centers))]
+    distances = [[] for _ in range(len(centers))]
+    for i, point in enumerate(data):
+        nearest_center = None
+        nearest_distance = float('inf')
+        for j, center in enumerate(centers):
+            distance = euclidean_distance(point, center)
+            if distance < nearest_distance:
+                nearest_center = center
+                nearest_distance = distance
+        clusters[centers.index(nearest_center)].append(point)
+        distances[centers.index(nearest_center)].append(nearest_distance)
+    return clusters, distances
+
+def recalculate_centers(clusters, distances):
+    """Recalculate the cluster centers."""
+    new_centers = []
+    for i, cluster in enumerate(clusters):
+        if cluster:
+            new_center = [sum(feature) / len(cluster) for feature in zip(*cluster)]
+            new_centers.append(new_center)
+        else:
+            new_centers.append(clusters[random.randint(0, len(clusters) - 1)][0])
+    return new_centers
+
+def k_means_clustering(data, k, max_iterations=100, tolerance=1e-5):
+    """Run the k-means clustering algorithm."""
+    centers = initialize_clusters(data, k)
+    for _ in range(max_iterations):
+        clusters, distances = assign_clusters(data, centers)
+        old_centers = centers
+        centers = recalculate_centers(clusters, distances)
+        if all(euclidean_distance(old_center, new_center) < tolerance for old_center, new_center in zip(old_centers, centers)):
+            break
+    return clusters
+
+def generate_data(n, k, min_val, max_val):
+    """Generate a dataset with n data points and k clusters."""
+    data = []
+    centers = []
+    for i in range(k):
+        center = [random.uniform(min_val, max_val) for _ in range(2)]
+        centers.append(center)
+        for j in range(int(n/k)):
+            point = list(center)
+            point[0] += random.uniform(-0.5, 0.5)
+            point[1] += random.uniform(-0.5, 0.5)
+            data.append(point)
+    return data, centers
+
+def plot_clusters(data, centers, clusters):
+    """Plot the clusters and cluster centers."""
+    plt.figure(figsize=(8, 6))
+    colors = ['r', 'g', 'b', 'c', 'm', 'y', 'k']
+    for i, cluster in enumerate(clusters):
+        for point in cluster:
+            plt.scatter(point[0], point[1], color=colors[i], alpha=0.5)
+        plt.scatter(centers[i][0], centers[i][1], marker='x', color='black', s=100)
+    plt.title('K-Means Clustering')
+    plt.xlabel('X')
+    plt.ylabel('Y')
+    plt.show()
+
+def test_k_means_clustering():
+    """Test the k-means clustering algorithm."""
+    data, centers = generate_data(100, 3, 0, 10)
+    clusters = k_means_clustering(data, 3)
+    plot_clusters(data, centers, clusters)
+
+if __name__ == "__main__":
+    test_k_means_clustering()
