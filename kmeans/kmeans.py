@@ -36,6 +36,7 @@ def k_means(data, k, max_iters=100, tolerance=1e-4):
         centers = update_centers(data, assignments, k)
     
     return assignments, distances, centers
+
 #Plotting
 def visualize_clusters(data, assignments, centers):
     plt.figure(figsize=(10, 8))
@@ -53,20 +54,22 @@ def visualize_clusters(data, assignments, centers):
     plt.axis('equal')
     plt.show()
 
+
 #Testing
-dataset = [[0,0], [-0.9, 0], [0.2, -0.2], [5,5.3], [5,5.6], [5,5.7]]
-for i in range(100):
-    rand_1 = random.randint(0, 5)
-    rand_2 = random.randint(0, 5)
-    dataset.append([rand_1, rand_2])
+if __name__ == "__main__":
+    dataset = [[0,0], [-0.9, 0], [0.2, -0.2], [5,5.3], [5,5.6], [5,5.7]]
+    for i in range(100):
+        rand_1 = random.randint(0, 5)
+        rand_2 = random.randint(0, 5)
+        dataset.append([rand_1, rand_2])
 
-for i in range(50):
-    rand_1 = random.randint(40, 50)
-    rand_2 = random.randint(40, 50)
-    dataset.append([rand_1, rand_2])
+    for i in range(50):
+        rand_1 = random.randint(40, 50)
+        rand_2 = random.randint(40, 50)
+        dataset.append([rand_1, rand_2])
 
-data = np.array(dataset)
-k = 2  # Assigning the number of clusters
-assignments, distances, centers = k_means(data, k)
+    data = np.array(dataset)
+    k = 2  # Assigning the number of clusters
+    assignments, distances, centers = k_means(data, k)
 
-visualize_clusters(data, assignments, centers)
+    visualize_clusters(data, assignments, centers)
