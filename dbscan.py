@@ -1,79 +1,84 @@
-import numpy as np
+import random
 import matplotlib.pyplot as plt
+from collections import deque
 
-class Point:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-        self.cluster_id = None
+UNCLASSIFIED = -1
+NOISE = 0
 
-class DBSCAN:
-    def __init__(self, epsilon, min_points):
-        self.epsilon = epsilon
-        self.min_points = min_points
+def region_query(dataset, point_index, eps):
+    neighbors = []
+    for i, point in enumerate(dataset):
+        if i != point_index and euclidean_distance(point, dataset[point_index]) <= eps:
+            neighbors.append(i)
+    return neighbors
 
-    def region_query(self, point, points):
-        neighbors = []
-        for p in points:
-            if self.distance(point, p) <= self.epsilon:
-                neighbors.append(p)
-        return neighbors
+def euclidean_distance(point1, point2):
+    return ((point1[0] - point2[0]) ** 2 + (point1[1] - point2[1]) ** 2) ** 0.5
 
-    def expand_cluster(self, point, neighbors, cluster_id, points):
-        point.cluster_id = cluster_id
-        for p in neighbors:
-            if p.cluster_id is None:
-                p.cluster_id = cluster_id
-                new_neighbors = self.region_query(p, points)
-                if len(new_neighbors) >= self.min_points:
-                    neighbors.extend(new_neighbors)
+def expand_cluster(dataset, point_index, cluster_id, eps, min_pts, clusters):
+    seeds = deque(region_query(dataset, point_index, eps))
+    if len(seeds) < min_pts:
+        clusters[point_index] = NOISE
+        return False
+    else:
+        clusters[point_index] = cluster_id
+        while seeds:
+            current_point_index = seeds.popleft()
+            if clusters[current_point_index] == UNCLASSIFIED:
+                neighbor_points = region_query(dataset, current_point_index, eps)
+                if len(neighbor_points) >= min_pts:
+                    seeds.extend(neighbor_points)
+            if clusters[current_point_index] == UNCLASSIFIED or clusters[current_point_index] == NOISE:
+                clusters[current_point_index] = cluster_id
+    return True
 
-    def distance(self, p1, p2):
-        return np.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2)
+def dbscan(dataset, eps, min_pts):
+    cluster_id = 1
+    clusters = [UNCLASSIFIED] * len(dataset)
+    for i, point in enumerate(dataset):
+        if clusters[i] == UNCLASSIFIED:
+            if expand_cluster(dataset, i, cluster_id, eps, min_pts, clusters):
+                cluster_id += 1
+    return clusters
 
-    def dbscan(self, points):
-        cluster_id = 0
-        for point in points:
-            if point.cluster_id is None:
-                neighbors = self.region_query(point, points)
-                if len(neighbors) < self.min_points:
-                    point.cluster_id = -1  # mark as noise
-                else:
-                    cluster_id += 1
-                    self.expand_cluster(point, neighbors, cluster_id, points)
+def plot_clusters(dataset, clusters):
+    colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
 
-    def plot_clusters(self, points):
-        colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
+    for i, point in enumerate(dataset):
+        if clusters[i] == NOISE:
+            plt.scatter(point[0], point[1], color='black')
+        else:
+            plt.scatter(point[0], point[1], color=colors[clusters[i] % len(colors)])
 
-        for point in points:
-            color = colors[point.cluster_id % len(colors)]
-            plt.scatter(point.x, point.y, color=color)
-
-        plt.xlabel('X')
-        plt.ylabel('Y')
-        plt.title('DBSCAN Clustering')
-        plt.show()
-
-
+    plt.xlabel('X')
+    plt.ylabel('Y')
+    plt.title('DBSCAN Clustering')
+    plt.show()
 
 if __name__ == "__main__":
-    np.random.seed(0)
-    num_points = 200
-    noise_level = 0.1
-    points = [Point(x, y) for x, y in zip(np.random.rand(num_points) * 10, np.random.rand(num_points) * 10)]
+    dataset = []
+    
+    # First cluster
+    for _ in range(100):
+        rand_x = random.uniform(0, 3)
+        rand_y = random.uniform(0, 3)
+        dataset.append([rand_x, rand_y])
 
-    # Introducing noise
-    for point in points[:int(noise_level * num_points)]:
-        point.x = np.random.rand() * 10
-        point.y = np.random.rand() * 10
+    # Second cluster
+    for _ in range(100):
+        rand_x = random.uniform(7, 10)
+        rand_y = random.uniform(0, 3)
+        dataset.append([rand_x, rand_y])
 
-    # Initializing DBSCAN
-    epsilon = 0.5
-    min_points = 5
-    dbscan = DBSCAN(epsilon, min_points)
+    # Third cluster
+    for _ in range(100):
+        rand_x = random.uniform(3.5, 6.5)
+        rand_y = random.uniform(6, 10)
+        dataset.append([rand_x, rand_y])
 
-    # Running DBSCAN clustering
-    dbscan.dbscan(points)
 
-    # Plotting clusters
-    dbscan.plot_clusters(points)
+    eps = 1.0
+    min_pts = 5
+
+    clusters = dbscan(dataset, eps, min_pts)
+    plot_clusters(dataset, clusters)
